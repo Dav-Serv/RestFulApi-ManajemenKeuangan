@@ -92,3 +92,50 @@ func GetTransactions(c *gin.Context) {
 		},
 	})
 }
+
+// GetTransactionByID - GET /api/transactions/:id
+func GetTransactionById(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	id := c.Param("id")
+
+	var trx models.Transaction
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&trx).Error; err != nil {
+		utils.Error(c, http.StatusNotFound, "transaksi tidak ditemukan")
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "berhasil mengambil transaksi", trx)
+}
+
+// UpdateTransaction - PUT /api/transactions/:id
+func UpdateTransaction(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	id := c.Param("id")
+
+	var trx models.Transaction
+	if err := database.DB.Where("id = ? AND user_id = ?", id, userID).First(&trx).Error; err != nil {
+		utils.Error(c, http.StatusNotFound, "transaksi tidak ditemukan")
+		return
+	}
+
+	var input models.TransactionInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.Error(c, http.StatusBadRequest, "input tidak valid" + err.Error())
+		return
+	}
+
+	trx.Type = input.Type
+	trx.Category = input.Category
+	trx.Amount = input.Amount
+	trx.Description = input.Description
+	if input.Date != nil {
+		trx.Date = *input.Date
+	}
+
+	if err := database.DB.Save(&trx).Error; err != nil {
+		utils.Error(c, http.StatusInternalServerError, "gagal memperbarui transaksi")
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "transaksi berhasil diperbarui", trx)
+}
