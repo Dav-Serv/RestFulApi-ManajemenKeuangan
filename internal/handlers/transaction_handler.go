@@ -37,6 +37,58 @@ func CreateTransaction(c *gin.Context) {
 	}
 
 	if err := database.DB.Create(&trx).Error; err != nil {
-		utils.Error()
+		utils.Error(c, http.StatusInternalServerError, "gagal menyimpan transaksi")
+		return
 	}
+
+	utils.Success(c, http.StatusCreated, "transaksi berhasil dibuat", trx)
+}
+
+// GetTransactions - GET /api/transactions
+// Mendukung query param: type, category, start_date, end_date, page, limit
+func GetTransactions(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	query := database.DB.Model(&models.Transaction{}).Where("user_id = ?", userID)
+
+	if t := c.Query("type"); t != "" {
+		query = query.Where("type = ?", t)
+	}
+	if cat := c.Query("category"); cat != "" {
+		query = query.Where("category = ?", cat)
+	}
+	if start := c.Query("start_date"); start != "" {
+		query = query.Where("date >= ?", start)
+	}
+	if end := c.Query("end_date"); end != "" {
+		query = query.Where("date <= ?", end)
+	}
+
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 {
+		limit = 10
+	}
+	offset := (page - 1) * limit
+
+	var total int64
+	query.Count(&total)
+
+	var transaction []models.Transaction
+	if err := query.Order("date desc").Offset(offset).Limit(limit).Find(&transaction).Error; err != nil {
+		utils.Error(c, http.StatusInternalServerError, "gagal mengambil data transaksi")
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "berhasil mengambil data transaksi", gin.H{
+		"transactions": transaction,
+		"pagination": gin.H{
+			"page":	 page,
+			"limit": limit,
+			"total": total,
+		},
+	})
 }
