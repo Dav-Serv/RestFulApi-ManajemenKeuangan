@@ -32,6 +32,13 @@ func Setup() *gin.Engine {
 		trx := api.Group("/transactions")
 		{
 			trx.POST("", handlers.CreateTransaction)
+			trx.GET("", handlers.GetTransactions)
+			trx.GET("/summary", handlers.GetSummary)
+			trx.GET("/:id", handlers.GetTransactionById)
+			trx.PUT("/:id", handlers.UpdateTransaction)
+			trx.DELETE("/:id", handlers.DeleteTransaction)
 		}
 	}
+
+	return r
 }
