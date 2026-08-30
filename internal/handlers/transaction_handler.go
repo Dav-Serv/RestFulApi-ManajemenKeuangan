@@ -139,3 +139,45 @@ func UpdateTransaction(c *gin.Context) {
 
 	utils.Success(c, http.StatusOK, "transaksi berhasil diperbarui", trx)
 }
+
+// DeleteTransaction - DELETE /api/transactions/:id
+func DeleteTransaction(c *gin.Context) {
+	userID := c.GetUint("user_id")
+	id := c.Param("id")
+
+	var trx models.Transaction
+	if err := database.DB.Where("id = ? and user_id = ?", id, userID).First(&trx).Error; err != nil {
+		utils.Error(c, http.StatusNotFound, "transaksi tidak ditemukan")
+	}
+
+	if err := database.DB.Delete(&trx).Error; err != nil {
+		utils.Error(c, http.StatusInternalServerError, "gagal menghapus transaksi")
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "transaksi berhasil dihapus", nil)
+}
+
+// GetSummary - GET /api/transactions/summary
+// Ringkasan total pemasukan, pengeluaran, dan saldo milik user yang login.
+func GetSummary(c *gin.Context) {
+	userID := c.GetUint("user_id")
+
+	var totalIncome, totalExpense float64
+
+	database.DB.Model(&models.Transaction{}).
+		Where("user_id = ? AND type = ?", userID, models.TypeIncome).
+		Select("COALESCE(SUM(amount), 0)").Scan(&totalIncome)
+
+	database.DB.Model(&models.Transaction{}).
+		Where("user_id = ? AND type = ?", userID, models.TypeExpense).
+		Select("COALESCE(SUM(amount), 0)").Scan(&totalExpense)
+
+	summary := models.SummaryResponse{
+		TotalIncome:	totalIncome,
+		TotalExpense:	totalExpense,
+		Balance: 		totalIncome - totalExpense,
+	}
+
+	utils.Success(c, http.StatusOK, "berhasil mengambil ringkasan", summary)
+}
