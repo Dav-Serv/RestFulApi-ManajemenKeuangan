@@ -20,7 +20,7 @@ func Setup() *gin.Engine {
 	auth := r.Group("/auth")
 	{
 		auth.GET("/google/login", handlers.GoogleLogin)
-		auth.GET("/google/callback", handlers.Googlecallback)
+		auth.GET("/google/callback", handlers.GoogleCallback)
 	}
 
 	// ---- API (protected pakai JWT) ----
