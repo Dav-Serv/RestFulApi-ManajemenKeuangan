@@ -21,6 +21,10 @@ func Setup() *gin.Engine {
 	{
 		auth.GET("/google/login", handlers.GoogleLogin)
 		auth.GET("/google/callback", handlers.GoogleCallback)
+
+		// SEMENTARA: dipakai selama Google OAuth belum di-setup/dipakai.
+		// Hapus route ini setelah integrasi Google OAuth selesai dites.
+		auth.POST("/dev-login", handlers.DevLogin)
 	}
 
 	// ---- API (protected pakai JWT) ----

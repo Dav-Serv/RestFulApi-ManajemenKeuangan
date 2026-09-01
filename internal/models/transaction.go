@@ -13,7 +13,7 @@ const (
 type Transaction struct {
 	ID			uint				`gorm:"primaryKey" json:"id"`
 	UserID		uint				`gorm:"index;not null" json:"user_id"`
-	Type		TransactionType		`gorm:"type:varchar(10); not nul; index" json:"type"`
+	Type		TransactionType		`gorm:"type:varchar(10);not nul; index" json:"type"`
 	Category	string				`gorm:"not null;index" json:"category"` // contoh: makan, transport, uang saku, beasiswa
 	Amount		float64				`gorm:"not null" json:"amount"`
 	Description	string				`json:"description"`

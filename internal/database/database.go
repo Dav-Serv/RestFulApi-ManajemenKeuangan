@@ -17,7 +17,6 @@ func Connect(dbPath string) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
-
 	if err != nil {
 		log.Fatalf("[database] gagal konek ke sqlite: %v", err)
 	}

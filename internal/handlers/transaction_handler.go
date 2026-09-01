@@ -148,6 +148,7 @@ func DeleteTransaction(c *gin.Context) {
 	var trx models.Transaction
 	if err := database.DB.Where("id = ? and user_id = ?", id, userID).First(&trx).Error; err != nil {
 		utils.Error(c, http.StatusNotFound, "transaksi tidak ditemukan")
+		return
 	}
 
 	if err := database.DB.Delete(&trx).Error; err != nil {

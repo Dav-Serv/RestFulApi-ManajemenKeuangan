@@ -139,6 +139,52 @@ func GoogleCallback(c *gin.Context) {
 	})
 }
 
+// DevLogin - POST /auth/dev-login
+// ENDPOINT SEMENTARA untuk testing selama Google OAuth belum di-setup/dipakai.
+// Membuat/mencari user berdasarkan email biasa (tanpa lewat Google) lalu
+// mengeluarkan JWT asli, supaya endpoint yang protected tetap bisa ditest.
+//
+// ⚠️ JANGAN dipakai di production. Hapus atau nonaktifkan route ini setelah
+// integrasi Google OAuth selesai dan sudah bisa dites end-to-end.
+type devLoginInput struct {
+	Email	string `json:"email" binding:"required,email"`
+	Name	string `json:"name" binding:"required"`
+}
+
+func DevLogin(c *gin.Context) {
+	var input devLoginInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		utils.Error(c, http.StatusBadRequest, "input tidak valid: " + err.Error())
+		return
+	}
+
+	var user models.User
+	result := database.DB.Where("email = ?", input.Email).First(&user)
+	if result.Error != nil {
+		user = models.User{
+			GoogleID: 	"dev-" + input.Email, // placeholder, bukan Google ID asli
+			Email: 		input.Email,
+			Name: 		input.Name,
+			Avatar: 	"",
+		}
+		if err := database.DB.Create(&user).Error; err != nil {
+			utils.Error(c, http.StatusInternalServerError, "gagal membuat user dev: " + err.Error())
+			return
+		}
+	}
+
+	jwtToken, err := utils.GenerateToken(user.ID, user.Email, config.App.JWTSecret, config.App.JWTExpiryHrs)
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, "gagal membuat JWT")
+		return
+	}
+
+	utils.Success(c, http.StatusOK, "dev login berhasil (mode testing), bukan Google OAuth", gin.H{
+		"token":	jwtToken,
+		"user":		user,
+	})
+}
+
 // Me - GET /api/auth/me (protected)
 func Me(c *gin.Context) {
 	userID := c.GetUint("user_id")
